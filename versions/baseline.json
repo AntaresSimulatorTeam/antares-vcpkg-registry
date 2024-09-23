@@ -25,7 +25,7 @@
       "port-version": 0
     },
     "or-tools-rte": {
-      "baseline": "9.10",
+      "baseline": "9.10-rte1.2",
       "port-version": 0
     },
     "protobuf": {
