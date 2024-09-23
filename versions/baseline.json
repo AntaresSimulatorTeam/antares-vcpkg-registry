@@ -1,3 +1,36 @@
 {
-  "default": {}
+  "default": {
+    "coin-or-cbc": {
+      "baseline": "2.10.7",
+      "port-version": 0
+    },
+    "coin-or-cgl": {
+      "baseline": "0.60.5",
+      "port-version": 0
+    },
+    "coin-or-clp": {
+      "baseline": "1.17",
+      "port-version": 0
+    },
+    "coin-or-osi": {
+      "baseline": "0.108.7",
+      "port-version": 0
+    },
+    "coinutils": {
+      "baseline": "2.11.6",
+      "port-version": 0
+    },
+    "or-tools": {
+      "baseline": "9.10",
+      "port-version": 0
+    },
+    "protobuf": {
+      "baseline": "26.1",
+      "port-version": 1
+    },
+    "scip": {
+      "baseline": "9.1.0",
+      "port-version": 0
+    }
+  }
 }
