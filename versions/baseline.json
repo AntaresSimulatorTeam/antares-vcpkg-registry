@@ -31,6 +31,10 @@
     "scip": {
       "baseline": "9.1.0",
       "port-version": 0
+    },
+    "sirius-solver": {
+      "baseline": "1.5",
+      "port-version": 0
     }
   }
 }
