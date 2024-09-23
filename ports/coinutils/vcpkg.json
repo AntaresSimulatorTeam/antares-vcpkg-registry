@@ -1,0 +1,29 @@
+{
+  "name": "coinutils",
+  "version": "2.11.6",
+  "description": "Fork from CoinUtils",
+  "dependencies": [
+    "bzip2",
+    "coin-or-buildtools",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "zlib"
+  ],
+  "features": {
+    "glpk": {
+      "description": "Build with Glpk",
+      "dependencies": [
+        {
+          "name": "glpk",
+          "default-features": false
+        }
+      ]
+    }
+  }
+}

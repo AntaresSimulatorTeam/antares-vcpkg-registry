@@ -1,0 +1,19 @@
+{
+  "name": "coin-or-cbc",
+  "version": "2.10.7",
+  "description": "Fork from CBC",
+  "dependencies": [
+    "coin-or-cgl",
+    "coin-or-clp",
+    "coin-or-osi",
+    "coinutils",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

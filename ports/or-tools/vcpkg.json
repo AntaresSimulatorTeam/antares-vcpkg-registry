@@ -1,0 +1,34 @@
+{
+  "name": "or-tools",
+  "version": "9.10",
+  "description": "Ortools",
+  "dependencies": [
+    {
+      "name": "abseil",
+      "features": [
+        "cxx17"
+      ]
+    },
+    "coin-or-cbc",
+    "eigen3",
+    "glpk",
+    "protobuf",
+    "re2",
+    "scip",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "zlib"
+  ],
+  "overrides": [
+    {
+      "name": "abseil",
+      "version": "20240116.2"
+    }
+  ]
+}
