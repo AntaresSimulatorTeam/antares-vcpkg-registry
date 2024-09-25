@@ -6,23 +6,23 @@ vcpkg_from_github(
         HEAD_REF master
 )
 
-vcpkg_from_github(
-        OUT_SOURCE_PATH RTE_SOURCE_PATH
-        REPO "rte-france/or-tools-rte"
-        REF "2c1808ff73511108257c5c9f27f1b710a76a11fa" #9.10-rte1.2
-        SHA512 183440e6a2d821a643664bd8ca5e72a0c75adfa5cab76fa2647a3b04f0006ac86761147ae1a7e72edb6c90b626c11b3bc5ea3d5135aa654e3be7b6028ded08a2
-        HEAD_REF master
+set(VERSION 9.10-rte1.2)
+vcpkg_download_distfile(ARCHIVE
+        URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
+        FILENAME "or-tools-v${VERSION}.tar.gz"
+        SHA512 fa44545665bcdd371051c565f4bb437225e87b6448b67c728bacc4bbc5104d57a5d3a6e3d1628410b0760862e495b5fbb0c5311bcba725dd43308bc39b6c5006
+)
+
+vcpkg_execute_required_process(COMMAND tar xzvf "${ARCHIVE}" --strip-components=1 -C "${SOURCE_PATH}" --exclude "CMakeLists.txt"
+        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+        LOGNAME "ortools-untar"
 )
 
 vcpkg_find_acquire_program(PYTHON3)
 get_filename_component(PYTHON3_DIR "${PYTHON3}" DIRECTORY)
 vcpkg_add_to_path("${PYTHON3_DIR}")
 
-FILE(COPY ${RTE_SOURCE_PATH}/ortools DESTINATION ${SOURCE_PATH} USE_SOURCE_PERMISSIONS)
-FILE(COPY ${RTE_SOURCE_PATH}/cmake_patches DESTINATION ${SOURCE_PATH} USE_SOURCE_PERMISSIONS)
-FILE(COPY_FILE ${RTE_SOURCE_PATH}/patch.py DESTINATION ${SOURCE_PATH} USE_SOURCE_PERMISSIONS)
-FILE(COPY_FILE ${RTE_SOURCE_PATH}/patch_utils.py DESTINATION ${SOURCE_PATH} USE_SOURCE_PERMISSIONS)
-vcpkg_execute_required_process(COMMAND ${PYTHON3} ${RTE_SOURCE_PATH}/patch.py
+vcpkg_execute_required_process(COMMAND ${PYTHON3} ${SOURCE_PATH}/patch.py
         WORKING_DIRECTORY "${SOURCE_PATH}"
         LOGNAME "patch-install"
 )
