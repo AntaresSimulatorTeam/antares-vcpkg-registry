@@ -27,6 +27,11 @@ vcpkg_execute_required_process(COMMAND ${PYTHON3} ${SOURCE_PATH}/patch.py
         LOGNAME "patch-install"
 )
 
+vcpkg_execute_required_process(COMMAND ls
+        WORKING_DIRECTORY "${SOURCE_PATH}"
+        LOGNAME "patch-install"
+)
+
 vcpkg_cmake_configure(
         SOURCE_PATH "${SOURCE_PATH}"
         OPTIONS
