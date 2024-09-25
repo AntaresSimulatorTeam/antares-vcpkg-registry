@@ -10,7 +10,7 @@ set(VERSION 9.10-rte1.2)
 vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
-        SHA512 fa44545665bcdd371051c565f4bb437225e87b6448b67c728bacc4bbc5104d57a5d3a6e3d1628410b0760862e495b5fbb0c5311bcba725dd43308bc39b6c5006
+        SHA512 7861b1958e43998f4b80447594f2580716880f0eada4114ee47be48efbf448688b3c0b597ded0269525b05e3ac4d74cc5ccff4146b608b8089c7f17f0c5a0666
 )
 
 vcpkg_execute_required_process(COMMAND tar xzvf "${ARCHIVE}" --strip-components=1 -C "${SOURCE_PATH}" --exclude "CMakeLists.txt"
