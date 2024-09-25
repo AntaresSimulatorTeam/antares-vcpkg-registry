@@ -8,7 +8,7 @@ vcpkg_from_github(
 
 set(VERSION 9.10-rte1.2)
 vcpkg_download_distfile(ARCHIVE
-        URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
+        URLS "https://github.com/JasonMarechal25/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
         SHA512 7861b1958e43998f4b80447594f2580716880f0eada4114ee47be48efbf448688b3c0b597ded0269525b05e3ac4d74cc5ccff4146b608b8089c7f17f0c5a0666
 )
@@ -22,7 +22,7 @@ vcpkg_find_acquire_program(PYTHON3)
 get_filename_component(PYTHON3_DIR "${PYTHON3}" DIRECTORY)
 vcpkg_add_to_path("${PYTHON3_DIR}")
 
-vcpkg_execute_required_process(COMMAND ${PYTHON3} ${SOURCE_PATH}/patch.py
+vcpkg_execute_required_process(COMMAND ${PYTHON3} patch.py
         WORKING_DIRECTORY "${SOURCE_PATH}"
         LOGNAME "patch-install"
 )
