@@ -1,5 +1,9 @@
 {
   "default": {
+    "abseil": {
+      "baseline": "20240116.2",
+      "port-version": 3
+    },
     "coin-or-cbc": {
       "baseline": "2.10.7",
       "port-version": 0
