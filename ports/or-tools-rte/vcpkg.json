@@ -25,10 +25,15 @@
     },
     "zlib"
   ],
-  "overrides": [
-    {
-      "name": "abseil",
-      "version": "20240116.2"
+  "features": {
+    "abseil-version": {
+      "description": "Freeze abseil version for compatibility",
+      "dependencies": [
+        {
+          "name": "abseil",
+          "version>=": "20240116.2"
+        }
+      ]
     }
-  ]
+  }
 }
