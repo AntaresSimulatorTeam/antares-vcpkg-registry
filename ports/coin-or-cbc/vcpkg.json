@@ -1,6 +1,6 @@
 {
   "name": "coin-or-cbc",
-  "version": "2.10.7",
+  "version": "2.10.12",
   "description": "Fork from CBC",
   "dependencies": [
     "coin-or-cgl",

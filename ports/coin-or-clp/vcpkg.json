@@ -1,6 +1,6 @@
 {
   "name": "coin-or-clp",
-  "version": "1.17",
+  "version": "1.17.10",
   "description": "Fork from Clp",
   "dependencies": [
     "coin-or-osi",

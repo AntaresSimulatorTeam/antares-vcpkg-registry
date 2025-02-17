@@ -1,6 +1,6 @@
 {
   "name": "coin-or-cgl",
-  "version": "0.60.5",
+  "version": "0.60.9",
   "description": "Fork from CGl",
   "dependencies": [
     "coin-or-clp",
