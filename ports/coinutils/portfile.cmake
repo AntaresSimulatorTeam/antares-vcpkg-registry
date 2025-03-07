@@ -1,12 +1,12 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "Mizux/CoinUtils"
-        REF "675cbb8e131f07705544a2e9074355cfa1a319b4" #stable 2.11
-        SHA512 19e68fd43a90f3c6ba84aef90fc8b108550efee6345a3a467995791955322b531abf6e410ed656b10a353108e73d8558e9cb6e24aa93a273686e226d17381c48
+        REF "6fc9606ffd6b2120ba211bfec6fe99ab3db5dfd6" #2.11.12
+        SHA512 9a7c27aff86be7fb403c7c48b269cd03c81452bd38bf32ae9c697f967b6dabeb7cd27d5ba1437fd6c8ab372f87ae5198dc537c4064bdc4bf8d220a6bc228689a
         HEAD_REF master
 )
 
-if (WIN32)
+if (VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
 

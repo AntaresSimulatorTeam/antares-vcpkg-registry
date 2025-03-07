@@ -1,8 +1,8 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "rte-france/sirius-solver"
-        REF "antares-integration-v1.5"
-        SHA512 19c6c156861bdeb58c2f17f703124d52020c79f9b81734057bf1bc5dff3dbc464179f99aeab6c8c44a84de1f84ed8f4929f9a919d2bf8bd49ac737f656088e19
+        REF "antares-integration-v1.7"
+        SHA512 39c5935a3b96d58fa35e7b20ef0bc65d78fca0f6ba9c01824e121c5d309d27b9c77b4fc4976c28f18e835596fb598355aee21bd524541bd01a26846973fd8ca4
         HEAD_REF main
 )
 

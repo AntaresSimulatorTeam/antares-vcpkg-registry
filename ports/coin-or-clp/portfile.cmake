@@ -1,11 +1,11 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "Mizux/Clp"
-        REF "914e0af16285ab6b0514947296213a0e67e80880" #stable/1.17
-        SHA512 c6a90007dc3177bb37800ae5c5c632403437df3a9ee54dfecf433e4c8b2ea403047c179ffdeef33b3aeab00c7ad2d859f4f56cca4488502dca8866889d909f1f
+        REF "14ab15c7dfc59b6bdb5455d42a2d5e9e1ec28a75" #1.17.10
+        SHA512 8b7783daef891733b79c6d54e52cfd9f5f2114394edecfaa4b66290ffa17ae7e174487c625b2576205772f018bde10da4baba933eced0f053e521e734fbc40db
         HEAD_REF master
 )
-if (WIN32)
+if (VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
 vcpkg_cmake_configure(

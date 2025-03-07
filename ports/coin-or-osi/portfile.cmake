@@ -1,11 +1,11 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "Mizux/Osi"
-        REF "d2809dd1ab01eb5c766edce7cea2ca2c1c5ecd2a" #stable/0.108
-        SHA512 0b15a823666f7d381dadf360b6443fd28e9ba1f2c4c157309e10318d0a836014ec2a37bce0f0efdd9960769d839352aca0ba60f862b9c7eeaa96fabdffb7e9ca
+        REF "ab3d7568384854c7c2bcd53f608c7b4b31a3f033" #0.108.11
+        SHA512 7b9e621594c246141b5f9912a19dbc14f95d4d35d9a8d5e47b2b7fa730b3e62aba3a138fb1dd55ff39a63e91318e7a328a02a82fa20185ebaf8f09171010c922
         HEAD_REF master
 )
-if (WIN32)
+if (VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
 vcpkg_cmake_configure(
