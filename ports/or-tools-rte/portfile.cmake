@@ -6,7 +6,7 @@ vcpkg_from_github(
         HEAD_REF master
 )
 
-set(VERSION 9.10-rte1.2)
+set(VERSION 9.11-rte1.2)
 vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
