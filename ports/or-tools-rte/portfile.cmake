@@ -1,16 +1,16 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "google/or-tools"
-        REF "ed94162b910fa58896db99191378d3b71a5313af" #9.11
-        SHA512 92fa365a0d309896cffd56e000d7e0711311890290358e5c1132b340d9216e55e7d412ccd735baa0f8ddc2127e0f0a68725350ad432ae80467fed7c6a6729eda
+        REF "b8e881fbde473a9e33e0dac475e498559eb0459d" #9.12
+        SHA512 ac0b5c9870a2b887610540266a5260c6756052ed5a212b0ad78447e8e9651e1fb3b6abe271b7758d4913397000c083b9e4e56297c259c58b8b40562463c63f78
         HEAD_REF master
 )
 
-set(VERSION 9.11-rte1.3)
+set(VERSION 9.12-rte1.1)
 vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
-        SHA512 13bd1177c8a46b496ac94dac41c10bbacf3353eab02be6222c75878fb063935ed103c7c90af8f66d36478fd3c2b425a391ee673f5621c973eb4229d76387f6b4
+        SHA512 64194a126c4b470415c3ca04bd9e8412cdb2b42e891b8584c97dcddca1a5af934ca08f6781f83f10bebba5dc7e58f9948d0656079a4818fc82eb6f0225dd26aa
 )
 
 vcpkg_execute_required_process(COMMAND tar xzvf "${ARCHIVE}" --strip-components=1 -C "${SOURCE_PATH}" --exclude "CMakeLists.txt"
