@@ -45,7 +45,6 @@ vcpkg_cmake_configure(
         -DBUILD_ZLIB=OFF
         -DUSE_HIGHS=OFF
         -DBUILD_TESTING=OFF
-        -DBUILD_SIRIUS=OFF
         -DUSE_SIRIUS=ON
 )
 
