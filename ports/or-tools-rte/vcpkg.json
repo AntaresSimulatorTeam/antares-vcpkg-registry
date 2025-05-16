@@ -1,6 +1,6 @@
 {
-  "name": "or-tools",
-  "version": "9.10",
+  "name": "or-tools-rte",
+  "version": "9.12-rte1.1",
   "description": "Ortools",
   "dependencies": [
     {
@@ -15,6 +15,7 @@
     "protobuf",
     "re2",
     "scip",
+    "sirius-solver",
     {
       "name": "vcpkg-cmake",
       "host": true
@@ -25,10 +26,15 @@
     },
     "zlib"
   ],
-  "overrides": [
-    {
-      "name": "abseil",
-      "version": "20240116.2"
+  "features": {
+    "abseil-version": {
+      "description": "Freeze abseil version for compatibility",
+      "dependencies": [
+        {
+          "name": "abseil",
+          "version>=": "20240116.2"
+        }
+      ]
     }
-  ]
+  }
 }
