@@ -1,6 +1,6 @@
 {
   "name": "or-tools-rte",
-  "version": "9.12-rte1.1",
+  "version": "9.13-rte1.2",
   "description": "Ortools",
   "dependencies": [
     {
