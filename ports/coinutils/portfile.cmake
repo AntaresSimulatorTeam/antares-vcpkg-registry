@@ -12,6 +12,7 @@ endif()
 
 vcpkg_cmake_configure(
         SOURCE_PATH "${SOURCE_PATH}"
+        OPTIONS -DCMAKE_CXX_FLAGS=-Wno-error=register
 )
 
 vcpkg_cmake_install()
