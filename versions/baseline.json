@@ -41,7 +41,7 @@
       "port-version": 0
     },
     "sirius-solver": {
-      "baseline": "1.8",
+      "baseline": "1.9",
       "port-version": 0
     }
   }
