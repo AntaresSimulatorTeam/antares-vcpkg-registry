@@ -6,11 +6,11 @@ vcpkg_from_github(
         HEAD_REF master
 )
 
-set(VERSION 9.13-rte1.2)
+set(VERSION 9.13-rte1.3)
 vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
-        SHA512 c3fdfc8f7421730a877c7042bdbaf3c339622f96de39044da503d548265b51196b94e6dd709ca7df21adc6e7deb5ea4d44c54720bc35bbd2a8fd91fec77ddd7c
+        SHA512 9918d998752b3a002c7a041fa68e8120dfdf8276363b87cdff7d6742044f45c93ea3e9c0ab1aa724b2db1a4917d3313e1e8ec020a26ea21885977193f7c706fa
 )
 
 vcpkg_execute_required_process(COMMAND tar xzvf "${ARCHIVE}" --strip-components=1 -C "${SOURCE_PATH}" --exclude "CMakeLists.txt"
@@ -38,12 +38,12 @@ vcpkg_cmake_configure(
         -DBUILD_DEPS=OFF #All dependencies should be provided by user or through vcpkg
         -DBUILD_SAMPLES=OFF
         -DBUILD_SHARED_LIBS=OFF
-        -DUSE_SCIP=ON
+        -DUSE_SCIP=OFF #Can't find libscip, don't know why
         -DUSE_GLPK=ON
         -DBUILD_FLATZINC=OFF
         -DBUILD_EXAMPLES=OFF
         -DBUILD_ZLIB=OFF
-        -DUSE_HIGHS=OFF
+        -DUSE_HIGHS=ON
         -DBUILD_TESTING=OFF
         -DUSE_SIRIUS=ON
 )
