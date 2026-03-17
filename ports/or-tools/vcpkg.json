@@ -1,6 +1,6 @@
 {
   "name": "or-tools",
-  "version": "9.10",
+  "version": "9.13",
   "description": "Ortools",
   "dependencies": [
     {
@@ -24,11 +24,5 @@
       "host": true
     },
     "zlib"
-  ],
-  "overrides": [
-    {
-      "name": "abseil",
-      "version": "20240116.2"
-    }
   ]
 }

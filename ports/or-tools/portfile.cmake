@@ -1,7 +1,7 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "google/or-tools"
-        REF "b39974ba209d9f5215bdc363bb8ad9625443d618" #stable 2.11
+        REF "7c52f28d700bd4f9f3048372a58d38ff291ee6e1" #9.13
         SHA512 183440e6a2d821a643664bd8ca5e72a0c75adfa5cab76fa2647a3b04f0006ac86761147ae1a7e72edb6c90b626c11b3bc5ea3d5135aa654e3be7b6028ded08a2
         HEAD_REF master
 )
