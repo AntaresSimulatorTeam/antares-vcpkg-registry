@@ -39,6 +39,7 @@ vcpkg_cmake_configure(
         -DBUILD_SAMPLES=OFF
         -DBUILD_SHARED_LIBS=OFF
         -DUSE_SCIP=OFF #Can't find libscip, don't know why
+        -DUSE_COINOR=OFF
         -DUSE_GLPK=ON
         -DBUILD_FLATZINC=OFF
         -DBUILD_EXAMPLES=OFF
