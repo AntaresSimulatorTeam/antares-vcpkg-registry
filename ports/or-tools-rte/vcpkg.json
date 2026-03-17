@@ -3,12 +3,7 @@
   "version": "9.13-rte1.3",
   "description": "Ortools",
   "dependencies": [
-    {
-      "name": "abseil",
-      "features": [
-        "cxx17"
-      ]
-    },
+    "abseil",
     "coin-or-cbc",
     "eigen3",
     "glpk",
