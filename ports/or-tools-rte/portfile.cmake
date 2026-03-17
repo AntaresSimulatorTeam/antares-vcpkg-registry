@@ -1,16 +1,16 @@
 vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO "google/or-tools"
-        REF "b8e881fbde473a9e33e0dac475e498559eb0459d" #9.12
-        SHA512 ac0b5c9870a2b887610540266a5260c6756052ed5a212b0ad78447e8e9651e1fb3b6abe271b7758d4913397000c083b9e4e56297c259c58b8b40562463c63f78
+        REF "7c52f28d700bd4f9f3048372a58d38ff291ee6e1" #9.13
+        SHA512 e0a962972f692d4c4e0169a6f33c977ba3b9fdbac7a82d7439c7d2c21e9765203076f89e79c8b4a043589f79d858fda3ac8d7e1991f13618e7ddf47f88b6605a
         HEAD_REF master
 )
 
-set(VERSION 9.12-rte1.1)
+set(VERSION 9.13-rte1.3)
 vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/rte-france/or-tools-rte/archive/refs/tags/v${VERSION}.tar.gz"
         FILENAME "or-tools-v${VERSION}.tar.gz"
-        SHA512 64194a126c4b470415c3ca04bd9e8412cdb2b42e891b8584c97dcddca1a5af934ca08f6781f83f10bebba5dc7e58f9948d0656079a4818fc82eb6f0225dd26aa
+        SHA512 9918d998752b3a002c7a041fa68e8120dfdf8276363b87cdff7d6742044f45c93ea3e9c0ab1aa724b2db1a4917d3313e1e8ec020a26ea21885977193f7c706fa
 )
 
 vcpkg_execute_required_process(COMMAND tar xzvf "${ARCHIVE}" --strip-components=1 -C "${SOURCE_PATH}" --exclude "CMakeLists.txt"
@@ -38,12 +38,12 @@ vcpkg_cmake_configure(
         -DBUILD_DEPS=OFF #All dependencies should be provided by user or through vcpkg
         -DBUILD_SAMPLES=OFF
         -DBUILD_SHARED_LIBS=OFF
-        -DUSE_SCIP=ON
+        -DUSE_SCIP=OFF #Can't find libscip, don't know why
         -DUSE_GLPK=ON
         -DBUILD_FLATZINC=OFF
         -DBUILD_EXAMPLES=OFF
         -DBUILD_ZLIB=OFF
-        -DUSE_HIGHS=OFF
+        -DUSE_HIGHS=ON
         -DBUILD_TESTING=OFF
         -DUSE_SIRIUS=ON
 )

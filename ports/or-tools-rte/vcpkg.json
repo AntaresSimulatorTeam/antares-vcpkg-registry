@@ -1,6 +1,6 @@
 {
   "name": "or-tools-rte",
-  "version": "9.12-rte1.1",
+  "version": "9.13-rte1.3",
   "description": "Ortools",
   "dependencies": [
     {
@@ -12,6 +12,7 @@
     "coin-or-cbc",
     "eigen3",
     "glpk",
+    "highs",
     "protobuf",
     "re2",
     "scip",
@@ -25,16 +26,5 @@
       "host": true
     },
     "zlib"
-  ],
-  "features": {
-    "abseil-version": {
-      "description": "Freeze abseil version for compatibility",
-      "dependencies": [
-        {
-          "name": "abseil",
-          "version>=": "20240116.2"
-        }
-      ]
-    }
-  }
+  ]
 }
