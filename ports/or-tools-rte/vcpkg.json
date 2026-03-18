@@ -4,7 +4,6 @@
   "description": "Ortools",
   "dependencies": [
     "abseil",
-    "coin-or-cbc",
     "eigen3",
     "glpk",
     "highs",
