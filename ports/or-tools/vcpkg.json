@@ -3,12 +3,7 @@
   "version": "9.10",
   "description": "Ortools",
   "dependencies": [
-    {
-      "name": "abseil",
-      "features": [
-        "cxx17"
-      ]
-    },
+    "abseil",
     "coin-or-cbc",
     "eigen3",
     "glpk",
@@ -24,11 +19,5 @@
       "host": true
     },
     "zlib"
-  ],
-  "overrides": [
-    {
-      "name": "abseil",
-      "version": "20240116.2"
-    }
   ]
 }
