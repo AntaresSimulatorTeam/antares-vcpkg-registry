@@ -140,6 +140,39 @@ if(@USE_SIRIUS@)
 endif()
 '''))
 
+# adapt CBC interface to newer coin-or-cbc API from vcpkg
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include <cstdint>\n',
+    '#include <deque>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include <memory>\n',
+    '#include <sstream>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include "CbcModel.hpp"\n',
+    '#include "CbcSolver.hpp"\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '// Heuristics\n\n',
+    '''namespace {
+int callCbc(const std::string& args, CbcModel& model) {
+  CbcParameters parameters;
+  CbcMain0(model, parameters);
+
+  std::deque<std::string> input_queue;
+  std::istringstream args_stream(args);
+  for (std::string token; args_stream >> token;) {
+    input_queue.push_back(token);
+  }
+
+  return CbcMain1(input_queue, model, parameters);
+}
+}  // namespace
+
+'''))
+
 # add SIRIUS execution in example files
 full_patch.append(Addition(
     Path.cwd()/'examples'/'cpp'/'linear_programming.cc',
