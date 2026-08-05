@@ -1,7 +1,7 @@
 {
   "name": "or-tools-rte",
   "version": "9.13-rte1.2",
-  "port-version": 6,
+  "port-version": 7,
   "description": "Ortools",
   "dependencies": [
     "abseil",

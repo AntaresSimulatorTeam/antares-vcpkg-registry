@@ -140,6 +140,27 @@ if(@USE_SIRIUS@)
 endif()
 '''))
 
+# provide compatibility aliases for absl nullability templates expected by OR-Tools
+for nullability_file in [
+    Path.cwd()/'ortools'/'math_opt'/'cpp'/'model.h',
+    Path.cwd()/'ortools'/'math_opt'/'storage'/'model_storage.h',
+    Path.cwd()/'ortools'/'math_opt'/'storage'/'model_storage_v2.h',
+]:
+    full_patch.append(Addition(
+        nullability_file,
+        '#include "absl/base/nullability.h"\n',
+        '''#ifndef ORTOOLS_ABSL_NULLABILITY_TYPE_ALIASES
+#define ORTOOLS_ABSL_NULLABILITY_TYPE_ALIASES
+namespace absl {
+template <typename T>
+using Nonnull = T;
+template <typename T>
+using Nullable = T;
+}  // namespace absl
+#endif
+
+'''))
+
 # adapt CBC interface to newer coin-or-cbc API from vcpkg
 full_patch.append(Addition(
     Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
