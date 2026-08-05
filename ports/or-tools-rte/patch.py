@@ -85,6 +85,40 @@ if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
 endif()
 '''))
 
+# make vcpkg scip config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'system_deps.cmake',
+    '''
+if(USE_SCIP)
+  if(NOT BUILD_SCIP AND NOT TARGET SCIP::libscip)
+    find_package(SCIP REQUIRED)
+  endif()
+endif()
+''',
+    '''
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+  add_library(SCIP::libscip INTERFACE IMPORTED)
+  target_link_libraries(SCIP::libscip INTERFACE libscip)
+endif()
+'''))
+
+# make installed vcpkg scip config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'ortoolsConfig.cmake.in',
+    '''
+if(@USE_SCIP@)
+  if(NOT TARGET SCIP::libscip)
+    find_dependency(SCIP REQUIRED)
+  endif()
+endif()
+''',
+    '''
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+  add_library(SCIP::libscip INTERFACE IMPORTED)
+  target_link_libraries(SCIP::libscip INTERFACE libscip)
+endif()
+'''))
+
 # add the USE_SIRIUS configuration flag in ortoolsConfig.cmake.in
 full_patch.append(Addition(
     Path.cwd()/'cmake'/'ortoolsConfig.cmake.in',
