@@ -36,6 +36,20 @@ if(USE_SIRIUS)
 endif()
 '''))
 
+# make vcpkg zlib compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'system_deps.cmake',
+    '''
+if(NOT BUILD_ZLIB AND NOT TARGET ZLIB::ZLIB)
+ find_package(ZLIB REQUIRED)
+endif()
+''',
+    '''
+if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
+  add_library(ZLIB::ZLIB ALIAS ZLIB::ZLIBSTATIC)
+endif()
+'''))
+
 # add the USE_SIRIUS configuration flag in deps.cmake
 full_patch.append(Addition(
     Path.cwd()/'cmake'/'system_deps.cmake',
@@ -53,6 +67,20 @@ if (USE_SIRIUS)
   endif()
   find_package(sirius_solver CONFIG REQUIRED)
 endif(USE_SIRIUS)
+'''))
+
+# make installed vcpkg zlib config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'ortoolsConfig.cmake.in',
+    '''
+if(NOT TARGET ZLIB::ZLIB)
+  find_dependency(ZLIB REQUIRED)
+endif()
+''',
+    '''
+if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
+  add_library(ZLIB::ZLIB ALIAS ZLIB::ZLIBSTATIC)
+endif()
 '''))
 
 # add the USE_SIRIUS configuration flag in ortoolsConfig.cmake.in
