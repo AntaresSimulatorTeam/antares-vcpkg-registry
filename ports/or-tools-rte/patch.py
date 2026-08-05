@@ -140,6 +140,16 @@ if(@USE_SIRIUS@)
 endif()
 '''))
 
+# link SIRIUS into the main OR-Tools targets with current upstream CMake target names
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'cpp.cmake',
+    '  ${SCIP_DEPS}\n',
+    '  $<$<BOOL:${USE_SIRIUS}>:sirius_solver>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'CMakeLists.txt',
+    '  $<$<BOOL:${USE_SCIP}>:SCIP::libscip>\n',
+    '  $<$<BOOL:${USE_SIRIUS}>:sirius_solver>\n'))
+
 # provide compatibility aliases for absl nullability templates expected by OR-Tools
 for nullability_file in [
     Path.cwd()/'ortools'/'math_opt'/'cpp'/'model.h',
