@@ -46,7 +46,8 @@ endif()
 ''',
     '''
 if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
-  add_library(ZLIB::ZLIB ALIAS ZLIB::ZLIBSTATIC)
+  add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+  target_link_libraries(ZLIB::ZLIB INTERFACE ZLIB::ZLIBSTATIC)
 endif()
 '''))
 
@@ -79,7 +80,8 @@ endif()
 ''',
     '''
 if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
-  add_library(ZLIB::ZLIB ALIAS ZLIB::ZLIBSTATIC)
+  add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+  target_link_libraries(ZLIB::ZLIB INTERFACE ZLIB::ZLIBSTATIC)
 endif()
 '''))
 
