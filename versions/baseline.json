@@ -30,7 +30,7 @@
     },
     "or-tools-rte": {
       "baseline": "9.13-rte1.2",
-      "port-version": 0
+      "port-version": 1
     },
     "protobuf": {
       "baseline": "26.1",
