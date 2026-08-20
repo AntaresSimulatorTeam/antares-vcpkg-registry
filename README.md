@@ -6,10 +6,10 @@ This repository serves two independent purposes for Antares vcpkg builds.
    `sirius-solver`, `or-tools-rte` and friends. Consumers reference it from
    `vcpkg-configuration.json` and pin it by **baseline SHA**, so pushing to `main`
    never changes what an existing branch resolves.
-2. **A vcpkg asset mirror** (the [`assets`](../../releases/tag/assets) release) — a
-   content-addressed copy of every source archive our builds download, so that
-   branches with a **frozen vcpkg baseline stay buildable after upstream mirrors purge
-   old versions**.
+2. **A vcpkg asset mirror** — one release per vcpkg baseline, tagged
+   `baseline-<sha>`, holding a content-addressed copy of every source archive that
+   baseline's builds download, so that branches with a **frozen vcpkg baseline stay
+   buildable after upstream mirrors purge old versions**.
 
 The two do not interact: release assets are not git objects, so they add nothing to
 the clone that vcpkg performs when resolving the registry.
@@ -25,9 +25,23 @@ upstream download URLs that rot. MSYS2 in particular deletes superseded packages
 within months, so `vcpkg install` fails at the *download* step: the build is fine,
 the bytes are just gone from the internet.
 
-Each asset is stored on the [`assets`](../../releases/tag/assets) release, named
-**exactly its SHA512** (128 lowercase hex characters, no extension). That is the
-layout vcpkg's `x-azurl` asset-cache provider expects.
+Each asset is named **exactly its SHA512** (128 lowercase hex characters, no
+extension), which is the layout vcpkg's `x-azurl` asset-cache provider expects.
+
+Assets are partitioned by **vcpkg baseline**, one release per baseline, tagged
+`baseline-<sha>` — the same SHA that appears as `default-registry.baseline` in a
+branch's `vcpkg-configuration.json` (or `builtin-baseline` in `vcpkg.json` on 8.8.x).
+The baseline decides which port versions, and therefore which source URLs, a branch
+resolves, so it is the natural key. Because a branch's baseline is frozen, its release
+is a stable, self-contained set that can be dropped when the branch is retired without
+affecting anything else.
+
+The `baseline-` prefix is not decoration: a git ref whose name is bare SHA-1 hex is
+ambiguous with the object id itself.
+
+Archives shared between baselines are stored once per release. That duplication is the
+price of each release being independently prunable, and it is small — there are only a
+handful of live baselines.
 
 Shared across Antares repositories — `Antares_Simulator`, `Antares_Xpansion`, and
 anything else that builds with vcpkg.
@@ -40,18 +54,18 @@ In CI, next to the existing `VCPKG_BINARY_SOURCES`:
 
 ```yaml
 env:
-  X_VCPKG_ASSET_SOURCES: ${{ vars.VCPKG_ASSET_SOURCES || 'clear;x-azurl,https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download/assets/,,read' }}
+  X_VCPKG_ASSET_SOURCES: "clear;x-azurl,${{ vars.VCPKG_ASSET_BASE_URL || 'https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download' }}/baseline-<this-branch's-baseline>/,,read"
 ```
 
-Reading the URL from an org-level Actions variable, with the literal as a fallback,
-means the mirror can later move (to Azure Blob, a different tag, a SAS-protected
-container) **without re-touching every frozen release branch** — which is the exact
-churn this mirror exists to avoid.
+The baseline is hardcoded per branch — correctly so, since a branch's baseline never
+changes. Only the *base* URL comes from an org-level Actions variable, so the mirror
+can later move (to Azure Blob, a SAS-protected container) **without re-touching every
+frozen release branch** — which is the exact churn this mirror exists to avoid.
 
 Locally:
 
 ```bash
-export X_VCPKG_ASSET_SOURCES="clear;x-azurl,https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download/assets/,,read"
+export X_VCPKG_ASSET_SOURCES="clear;x-azurl,https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download/baseline-$(jq -r '.["default-registry"].baseline' vcpkg-configuration.json)/,,read"
 ```
 
 Note the trailing `/` on the URL and the `,,read`: the empty field is the SAS token
@@ -105,7 +119,8 @@ a file whose hash matches is by definition the right file.
    sha512sum thefile.tar.zst          # must match the expected hash exactly
    sha=$(sha512sum thefile.tar.zst | cut -d' ' -f1)
    cp thefile.tar.zst "$sha"
-   gh release upload assets "$sha" -R AntaresSimulatorTeam/antares-vcpkg-registry
+   gh release upload "baseline-<baseline-sha>" "$sha" \
+       -R AntaresSimulatorTeam/antares-vcpkg-registry
    ```
 
    If the hash does not match, the file is the wrong one — do not upload it. vcpkg
@@ -114,12 +129,13 @@ a file whose hash matches is by definition the right file.
 #### Bulk upload from a local downloads directory
 
 ```bash
-tools/upload-downloads.sh /path/to/vcpkg/downloads            # upload what is missing
-tools/upload-downloads.sh /path/to/vcpkg/downloads --dry-run  # just report
+tools/upload-downloads.sh /path/to/vcpkg/downloads <baseline-sha>
+tools/upload-downloads.sh /path/to/vcpkg/downloads <baseline-sha> --dry-run
 ```
 
-It hashes every top-level file, skips what the mirror already has, and uploads the
-rest. `ASSETS_REPO` and `ASSETS_TAG` override the target.
+It hashes every top-level file, skips what that baseline's release already has, and
+uploads the rest, creating the release if it does not exist. A bare 40-hex baseline is
+accepted and prefixed automatically. `ASSETS_REPO` overrides the target repo.
 
 ### Verifying the mirror actually serves a file
 
@@ -128,7 +144,7 @@ came from here and not from a still-live upstream:
 
 ```bash
 rm -f vcpkg/downloads/<the-file>
-export X_VCPKG_ASSET_SOURCES="clear;x-azurl,https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download/assets/,,read;x-block-origin"
+export X_VCPKG_ASSET_SOURCES="clear;x-azurl,https://github.com/AntaresSimulatorTeam/antares-vcpkg-registry/releases/download/baseline-<sha>/,,read;x-block-origin"
 ./vcpkg/vcpkg install --x-manifest-root=. --triplet x64-linux-release
 ```
 
@@ -140,7 +156,7 @@ no infrastructure to maintain. The only thing they cannot do is accept PUT, whic
 why the mirror is read-only and writes go through `gh release upload`.
 
 If the mirror ever outgrows this — or needs to be private — point the org variable
-`VCPKG_ASSET_SOURCES` at an Azure Blob container with a SAS token and `readwrite`,
+`VCPKG_ASSET_BASE_URL` at an Azure Blob container with a SAS token and `readwrite`,
 and consumers pick it up with no branch changes.
 
 The mirror lives here rather than in a repository of its own because this is already

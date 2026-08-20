@@ -89,6 +89,22 @@ jobs:
             echo "::error::no vcpkg.json at repo root or in src/" && exit 1
           fi
           echo "manifest root: $manifest_root"
+          echo "MANIFEST_ROOT=$manifest_root" >> "$GITHUB_ENV"
+
+          # The baseline decides which port versions -- and therefore which
+          # source URLs -- this ref resolves, so it is what the asset set is
+          # keyed by. Older branches carry it in vcpkg-configuration.json;
+          # 8.8.x predates that and uses builtin-baseline in vcpkg.json.
+          baseline=$(jq -r '.["default-registry"].baseline // empty' \
+                       "$manifest_root/vcpkg-configuration.json" 2>/dev/null || true)
+          if [ -z "$baseline" ]; then
+            baseline=$(jq -r '.["builtin-baseline"] // empty' \
+                         "$manifest_root/vcpkg.json" 2>/dev/null || true)
+          fi
+          [[ $baseline =~ ^[0-9a-f]{40}$ ]] || baseline=""
+          [ -n "$baseline" ] || { echo "::error::could not determine vcpkg baseline for ${{ inputs.ref }}"; exit 1; }
+          echo "vcpkg baseline: $baseline"
+          echo "BASELINE=$baseline" >> "$GITHUB_ENV"
 
           extra=()
           [ "${{ inputs.mode }}" = "download-only" ] && extra+=(--only-downloads)
@@ -106,4 +122,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mirror/tools/upload-downloads.sh consumer/vcpkg/downloads
+        run: ./mirror/tools/upload-downloads.sh consumer/vcpkg/downloads "$BASELINE"
