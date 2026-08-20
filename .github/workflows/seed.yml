@@ -160,7 +160,7 @@ jobs:
           # manual recovery procedure in the README can bring back, so name them
           # rather than just counting them.
           dead=$(grep -h 404 vcpkg-install.log 2>/dev/null \
-                   | grep -oE 'https?://[^ "]+' | sed 's#.*/##' | sort -u || true)
+                   | grep -oE 'https?://[^ "]+' | sed -E 's#.*/##; s#[):,;.]+$##' | sort -u || true)
 
           {
             echo "### \`${{ inputs.ref }}\` on ${{ inputs.runner }}"
