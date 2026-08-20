@@ -6,7 +6,13 @@ name: Seed asset mirror
 #
 # Callable two ways:
 #   - workflow_dispatch, to seed one (ref x OS) combination by hand;
-#   - workflow_call, which is how refresh.yml fans out over mirror-targets.json.
+#   - workflow_call, including from another repository. That is the intended
+#     trigger: a job in Antares_Simulator's new_release.yml calls this once per
+#     OS when a release is cut, which is exactly when a branch's baseline is
+#     settled and worth freezing into the mirror.
+#
+# A cross-repository caller must pass MIRROR_TOKEN. Its own GITHUB_TOKEN is
+# scoped to its own repository and cannot upload release assets here.
 
 on:
   workflow_dispatch:
@@ -55,12 +61,25 @@ on:
         required: false
         type: string
         default: download-only
+    secrets:
+      MIRROR_TOKEN:
+        description: >-
+          Token with contents:write on this repository. Required when calling
+          from another repository; omit it when dispatching here, where the
+          job's own GITHUB_TOKEN already has the access.
+        required: false
+
+env:
+  # The mirror repository, spelled out rather than taken from github.repository:
+  # in a reusable workflow that context is the *caller's* repository.
+  ASSETS_REPO: AntaresSimulatorTeam/antares-vcpkg-registry
 
 permissions:
-  # Needed to upload release assets. GitHub has no releases-only permission, so this
-  # also grants write access to ports/ and versions/ -- keep this the only workflow
-  # here that holds it. Consumers pin the registry by baseline SHA, so a bad push to
-  # main does not change what any existing branch resolves.
+  # Needed to upload release assets on the workflow_dispatch path, where the
+  # upload uses this repository's own GITHUB_TOKEN. GitHub validates a reusable
+  # workflow's requested permissions against the caller regardless of which
+  # event fired, so a cross-repository caller has to grant contents:write too --
+  # on its own token, which this workflow never uses for the upload.
   contents: write
 
 jobs:
@@ -70,6 +89,13 @@ jobs:
       - name: Checkout mirror tooling
         uses: actions/checkout@v4
         with:
+          # Named explicitly: a bare checkout here would take the caller's
+          # repository. job_workflow_sha pins the same commit of this workflow
+          # that is running, so the script and the workflow cannot drift; it is
+          # empty on the dispatch path, where checkout falls back to the default
+          # branch, which is the same commit.
+          repository: ${{ env.ASSETS_REPO }}
+          ref: ${{ github.job_workflow_sha }}
           path: mirror
 
       - name: Checkout consumer
@@ -144,7 +170,9 @@ jobs:
       - name: Upload new assets to the mirror
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Cross-repository callers pass MIRROR_TOKEN; a dispatch here has no
+          # such secret and falls back to a token that already has the access.
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN || secrets.GITHUB_TOKEN }}
           MIRROR_RESULT_FILE: mirror-result.txt
         run: ./mirror/tools/upload-downloads.sh consumer/vcpkg/downloads "$BASELINE"
 
@@ -167,7 +195,7 @@ jobs:
             echo
             echo "| baseline | new assets | already mirrored |"
             echo "|---|---:|---:|"
-            echo "| [\`${BASELINE:-unknown}\`](https://github.com/${{ github.repository }}/releases/tag/$tag) | $new | $skipped |"
+            echo "| [\`${BASELINE:-unknown}\`](https://github.com/$ASSETS_REPO/releases/tag/$tag) | $new | $skipped |"
             if [ -n "$dead" ]; then
               echo
               echo "<details><summary>$(echo "$dead" | wc -l) archive(s) no longer available upstream</summary>"

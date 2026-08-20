@@ -78,52 +78,69 @@ only when you want to *prove* a file came from the mirror.
 
 ### Adding assets
 
-#### Normally: nothing, it is automatic
+#### Normally: cutting a release seeds the mirror
 
-[`Refresh asset mirror`](../../actions/workflows/refresh.yml) runs monthly and re-seeds
-every entry in [`mirror-targets.json`](mirror-targets.json), so branches stay covered
-without anyone remembering to do it. Each run downloads with the asset cache disabled,
-so anything still reachable upstream is captured; archives already mirrored are skipped
-on upload, so a run where nothing changed costs runner time and nothing else.
+`seed.yml` is a **reusable** workflow, and the intended trigger is a release.
+`Antares_Simulator`'s `new_release.yml` calls it once per OS from a `seed_asset_mirror`
+job, gated on a dispatch input, in the same shape as the existing `generate_results` job:
 
-Monthly is deliberate. The mirror only has to hold a file *before* upstream deletes it,
-and purges play out over months — the lag this leaves is a window where the origin URL
-is still alive anyway. Two things are worth doing by hand rather than waiting:
-
-- **after a baseline bump**, dispatch the workflow with `filter` set to the affected ref;
-- **when a new maintenance branch is cut**, add it to `mirror-targets.json`.
-
-A target is four fields, plus an optional `mode`:
-
-```json
-{
-  "repository": "AntaresSimulatorTeam/Antares_Simulator",
-  "ref": "release/9.3.x",
-  "runner": "windows-2022",
-  "triplet": "x64-windows-release"
-}
+```yaml
+  seed_asset_mirror:
+    name: Seed vcpkg asset mirror
+    needs: release
+    if: ${{ github.event.inputs.seed_asset_mirror == 'true' }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            triplet: x64-linux-release
+          - runner: windows-2022
+            triplet: x64-windows-release
+    uses: AntaresSimulatorTeam/antares-vcpkg-registry/.github/workflows/seed.yml@main
+    with:
+      repository: ${{ github.repository }}
+      ref: ${{ github.event.inputs.target_branch }}
+      runner: ${{ matrix.runner }}
+      triplet: ${{ matrix.triplet }}
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.VCPKG_MIRROR_PAT }}
 ```
 
-The run summary reports, per target, the baseline it resolved, how many assets were new,
-and — the part worth reading — any archive whose origin already returns 404. Those are
-the ones only the manual recovery procedure below can bring back.
+A release is the right moment: it is when a branch's baseline stops moving and becomes
+something that has to stay buildable for years. Patch releases on a maintenance branch
+re-run it, so a branch that is still being maintained keeps getting re-checked for free,
+and a newly cut branch is covered by its first release rather than by someone remembering
+to add it somewhere.
 
-Nothing needs to be configured in the consumer repositories: the fan-out runs here and
-uploads with this repository's own `GITHUB_TOKEN`, so frozen release branches are never
-touched and no cross-repository credential exists.
+**`MIRROR_TOKEN` is required for cross-repository calls.** A caller's `GITHUB_TOKEN` is
+scoped to the caller's own repository and cannot upload release assets here, so the caller
+must pass a token with `Contents: Read and write` on this repository — an organisation
+secret (`VCPKG_MIRROR_PAT`) or a GitHub App installation token. This mirrors what
+`new_release.yml` already does with `SIMTEST_REPO_PAT`. Note the caller also has to declare
+`permissions: contents: write`: GitHub validates a reusable workflow's requested permissions
+against the caller whatever the event, even though that token is not what performs the upload.
 
-#### One-off: the seeding workflow
+The run summary reports, per call, the baseline it resolved, how many assets were new, and
+— the part worth reading — any archive whose origin already returns 404. Those are the ones
+only the manual recovery procedure below can bring back.
 
-[`Seed asset mirror`](../../actions/workflows/seed.yml) is the single-target workflow the
-refresh fans out over, and can be dispatched directly with the consumer repo, the ref, the
-runner OS and the triplet. Use it to seed a ref that is not — or not yet — a target.
+#### One-off: dispatching it here
 
-**Prioritise Windows** — that is where `vcpkg_acquire_msys` pulls the volatile MSYS2
-packages, which are by far the most likely to disappear.
+[`Seed asset mirror`](../../actions/workflows/seed.yml) can also be dispatched directly on
+this repository with the consumer repo, the ref, the runner OS and the triplet. No token
+setup is involved on this path — the job's own `GITHUB_TOKEN` has the access. Use it to
+seed a ref that is not going through a release: after a baseline bump on `develop`, or to
+backfill a branch released before this existed.
 
 `download-only` mode is much faster but best-effort: some ports only resolve their
 downloads during the build. If a Windows seed comes back without MSYS2 packages, re-run
 in `full-install` mode.
+
+**Prioritise Windows** — that is where `vcpkg_acquire_msys` pulls the volatile MSYS2
+packages, which are by far the most likely to disappear.
 
 Seeding can only capture what **still downloads today**. Archives already purged
 upstream need the procedure below.
@@ -199,6 +216,5 @@ few hundred kilobytes.
 The one trade-off: GitHub has no releases-only permission, so anything that can seed
 the mirror (`Contents: write`) can also rewrite `ports/` and `versions/`. This is
 acceptable because consumers pin the registry by **baseline SHA** — a bad push to
-`main` does not change what any existing branch resolves. Keep `seed.yml` and
-`refresh.yml` the only workflows here holding `contents: write`, and review changes to
-them accordingly.
+`main` does not change what any existing branch resolves. Keep `seed.yml` the only
+workflow here holding `contents: write`, and review changes to it accordingly.
