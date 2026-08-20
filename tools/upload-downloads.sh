@@ -8,6 +8,10 @@
 # affecting any other branch.
 #
 # Usage: tools/upload-downloads.sh <downloads-dir> <baseline-sha|tag> [--dry-run]
+#
+# Env:
+#   ASSETS_REPO         override the mirror repository
+#   MIRROR_RESULT_FILE  if set, write tag/new/skipped as shell assignments there
 set -euo pipefail
 
 DOWNLOADS=${1:?usage: $0 <vcpkg-downloads-dir> <baseline-sha|tag> [--dry-run]}
@@ -80,6 +84,14 @@ while IFS= read -r -d '' f; do
 done < <(find "$DOWNLOADS" -maxdepth 1 -type f -print0)
 
 echo "$new new asset(s), $skipped already mirrored"
+
+# Machine-readable counts for a caller that wants to report them (refresh.yml
+# renders these into the run summary). Written before the early exit below so
+# a no-op run still reports.
+if [ -n "${MIRROR_RESULT_FILE:-}" ]; then
+    { echo "tag=$TAG"; echo "new=$new"; echo "skipped=$skipped"; } > "$MIRROR_RESULT_FILE"
+fi
+
 [ "$new" -eq 0 ] && exit 0
 
 if [ "$DRY_RUN" = "--dry-run" ]; then

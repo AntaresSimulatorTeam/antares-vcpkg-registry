@@ -2,9 +2,11 @@ name: Seed asset mirror
 
 # Builds a consumer repo at a given ref with the asset cache disabled, so every
 # source archive is fetched from its origin URL, then mirrors whatever landed in
-# vcpkg/downloads. Run this for each (branch x OS) combination that CI builds,
-# and again after every baseline bump on develop, so the mirror stays ahead of
-# the next upstream purge.
+# vcpkg/downloads.
+#
+# Callable two ways:
+#   - workflow_dispatch, to seed one (ref x OS) combination by hand;
+#   - workflow_call, which is how refresh.yml fans out over mirror-targets.json.
 
 on:
   workflow_dispatch:
@@ -35,9 +37,28 @@ on:
         type: choice
         options: [download-only, full-install]
 
+  workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+      ref:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      triplet:
+        required: true
+        type: string
+      mode:
+        required: false
+        type: string
+        default: download-only
+
 permissions:
   # Needed to upload release assets. GitHub has no releases-only permission, so this
-  # also grants write access to ports/ and versions/ — keep this the only workflow
+  # also grants write access to ports/ and versions/ -- keep this the only workflow
   # here that holds it. Consumers pin the registry by baseline SHA, so a bad push to
   # main does not change what any existing branch resolves.
   contents: write
@@ -112,14 +133,51 @@ jobs:
           # Best-effort: a dead upstream URL is exactly what we are trying to
           # work around, so one failure must not discard the archives that did
           # download. They get mirrored anyway and the rest is handled by the
-          # manual recovery procedure in the README.
+          # manual recovery procedure in the README. The log is kept so the
+          # summary step can report which URLs are already gone.
           ./vcpkg/vcpkg install \
             --x-manifest-root="$manifest_root" \
             --triplet "${{ inputs.triplet }}" \
-            "${extra[@]}" || echo "::warning::vcpkg exited non-zero; mirroring whatever was downloaded"
+            "${extra[@]}" 2>&1 | tee ../vcpkg-install.log \
+            || echo "::warning::vcpkg exited non-zero; mirroring whatever was downloaded"
 
       - name: Upload new assets to the mirror
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MIRROR_RESULT_FILE: mirror-result.txt
         run: ./mirror/tools/upload-downloads.sh consumer/vcpkg/downloads "$BASELINE"
+
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          new=n/a skipped=n/a tag="baseline-${BASELINE:-unknown}"
+          # shellcheck disable=SC1090
+          [ -f mirror-result.txt ] && . ./mirror-result.txt
+
+          # Archives whose origin is already gone. These are the ones only the
+          # manual recovery procedure in the README can bring back, so name them
+          # rather than just counting them.
+          dead=$(grep -h 404 vcpkg-install.log 2>/dev/null \
+                   | grep -oE 'https?://[^ "]+' | sed 's#.*/##' | sort -u || true)
+
+          {
+            echo "### \`${{ inputs.ref }}\` on ${{ inputs.runner }}"
+            echo
+            echo "| baseline | new assets | already mirrored |"
+            echo "|---|---:|---:|"
+            echo "| [\`${BASELINE:-unknown}\`](https://github.com/${{ github.repository }}/releases/tag/$tag) | $new | $skipped |"
+            if [ -n "$dead" ]; then
+              echo
+              echo "<details><summary>$(echo "$dead" | wc -l) archive(s) no longer available upstream</summary>"
+              echo
+              echo '```'
+              echo "$dead"
+              echo '```'
+              echo
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          [ -z "$dead" ] || echo "::warning::${{ inputs.ref }} (${{ inputs.runner }}): upstream 404 for $(echo "$dead" | tr '\n' ' ')"

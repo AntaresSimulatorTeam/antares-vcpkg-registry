@@ -1,0 +1,80 @@
+name: Refresh asset mirror
+
+# Keeps the mirror ahead of upstream rot without anyone remembering to do it.
+#
+# Every target in mirror-targets.json is re-seeded on a schedule: the download
+# step runs with the asset cache disabled, so anything a branch needs that is
+# still reachable gets captured. Archives already mirrored are skipped on
+# upload, so a run where nothing changed costs runner time and nothing else.
+#
+# Monthly is deliberate rather than lazy. The mirror only has to hold a file
+# before upstream deletes it, and upstream purges play out over months; the
+# window this leaves open is one where the origin URL is still alive anyway.
+# Dispatch it by hand right after a baseline bump instead of waiting.
+
+on:
+  schedule:
+    # 04:17 UTC on the 3rd. Off the hour and off the 1st, where scheduled-job
+    # contention on GitHub is worst.
+    - cron: '17 4 3 * *'
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: >-
+          Only seed targets whose ref contains this string (e.g. "9.3").
+          Leave empty to seed everything.
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+      count: ${{ steps.build.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build target matrix
+        id: build
+        shell: bash
+        env:
+          FILTER: ${{ inputs.filter }}
+        run: |
+          matrix=$(jq -c --arg f "${FILTER:-}" '
+            [ .[]
+              | select($f == "" or (.ref | contains($f)))
+              | { repository, ref, runner, triplet, mode: (.mode // "download-only") }
+            ]' mirror-targets.json)
+
+          count=$(jq -r 'length' <<<"$matrix")
+          # An empty matrix skips the downstream job silently, which would look
+          # like a green run that mirrored nothing. Fail loudly instead.
+          [ "$count" -gt 0 ] || { echo "::error::no targets match filter '${FILTER:-}'"; exit 1; }
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          jq -r '.[] | "- \(.ref) on \(.runner) (\(.triplet))"' <<<"$matrix" >> "$GITHUB_STEP_SUMMARY"
+
+  seed:
+    needs: targets
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      # Every job re-downloads a full dependency set from origin; a dozen at
+      # once is a burst upstream mirrors do not need from us.
+      max-parallel: 3
+      matrix:
+        target: ${{ fromJson(needs.targets.outputs.matrix) }}
+    name: ${{ matrix.target.ref }} (${{ matrix.target.runner }})
+    uses: ./.github/workflows/seed.yml
+    with:
+      repository: ${{ matrix.target.repository }}
+      ref: ${{ matrix.target.ref }}
+      runner: ${{ matrix.target.runner }}
+      triplet: ${{ matrix.target.triplet }}
+      mode: ${{ matrix.target.mode }}
