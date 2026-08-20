@@ -1,0 +1,109 @@
+name: Seed asset mirror
+
+# Builds a consumer repo at a given ref with the asset cache disabled, so every
+# source archive is fetched from its origin URL, then mirrors whatever landed in
+# vcpkg/downloads. Run this for each (branch x OS) combination that CI builds,
+# and again after every baseline bump on develop, so the mirror stays ahead of
+# the next upstream purge.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Consumer repository to seed from
+        required: true
+        default: AntaresSimulatorTeam/Antares_Simulator
+      ref:
+        description: Branch or tag to seed (e.g. release/9.3.x)
+        required: true
+      runner:
+        description: Runner image to seed on
+        required: true
+        default: windows-2022
+        type: choice
+        options: [windows-2022, ubuntu-22.04]
+      triplet:
+        description: vcpkg triplet
+        required: true
+        default: x64-windows-release
+      mode:
+        description: >-
+          download-only is fast but best-effort; full-install also runs the
+          builds, which is what pulls MSYS2 packages for some ports.
+        required: true
+        default: download-only
+        type: choice
+        options: [download-only, full-install]
+
+permissions:
+  # Needed to upload release assets. GitHub has no releases-only permission, so this
+  # also grants write access to ports/ and versions/ — keep this the only workflow
+  # here that holds it. Consumers pin the registry by baseline SHA, so a bad push to
+  # main does not change what any existing branch resolves.
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout mirror tooling
+        uses: actions/checkout@v4
+        with:
+          path: mirror
+
+      - name: Checkout consumer
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          path: consumer
+          submodules: false
+
+      - name: Bootstrap vcpkg
+        shell: bash
+        working-directory: consumer
+        run: |
+          git submodule update --init vcpkg
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
+          else
+            ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+          fi
+
+      - name: Download dependencies from origin
+        shell: bash
+        working-directory: consumer
+        env:
+          # "clear" removes every asset source including defaults, so nothing is
+          # served from the mirror and every archive is pulled from its origin.
+          X_VCPKG_ASSET_SOURCES: clear
+          VCPKG_BINARY_SOURCES: clear
+        run: |
+          # The manifest sits at the repo root on develop and 10.2.x, but under
+          # src/ on 10.1.x and older (moved by 976407de99).
+          if [ -f vcpkg.json ]; then
+            manifest_root=.
+          elif [ -f src/vcpkg.json ]; then
+            manifest_root=src
+          else
+            echo "::error::no vcpkg.json at repo root or in src/" && exit 1
+          fi
+          echo "manifest root: $manifest_root"
+
+          extra=()
+          [ "${{ inputs.mode }}" = "download-only" ] && extra+=(--only-downloads)
+
+          # Best-effort: a dead upstream URL is exactly what we are trying to
+          # work around, so one failure must not discard the archives that did
+          # download. They get mirrored anyway and the rest is handled by the
+          # manual recovery procedure in the README.
+          ./vcpkg/vcpkg install \
+            --x-manifest-root="$manifest_root" \
+            --triplet "${{ inputs.triplet }}" \
+            "${extra[@]}" || echo "::warning::vcpkg exited non-zero; mirroring whatever was downloaded"
+
+      - name: Upload new assets to the mirror
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mirror/tools/upload-downloads.sh consumer/vcpkg/downloads
