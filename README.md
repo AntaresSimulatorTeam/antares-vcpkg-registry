@@ -106,7 +106,7 @@ job, gated on a dispatch input, in the same shape as the existing `generate_resu
       runner: ${{ matrix.runner }}
       triplet: ${{ matrix.triplet }}
     secrets:
-      MIRROR_TOKEN: ${{ secrets.VCPKG_MIRROR_PAT }}
+      MIRROR_TOKEN: ${{ secrets.VCPKG_ASSET_PAT }}
 ```
 
 A release is the right moment: it is when a branch's baseline stops moving and becomes
@@ -118,7 +118,7 @@ to add it somewhere.
 **`MIRROR_TOKEN` is required for cross-repository calls.** A caller's `GITHUB_TOKEN` is
 scoped to the caller's own repository and cannot upload release assets here, so the caller
 must pass a token with `Contents: Read and write` on this repository — an organisation
-secret (`VCPKG_MIRROR_PAT`) or a GitHub App installation token. This mirrors what
+secret (`VCPKG_ASSET_PAT`) or a GitHub App installation token. This mirrors what
 `new_release.yml` already does with `SIMTEST_REPO_PAT`. Note the caller also has to declare
 `permissions: contents: write`: GitHub validates a reusable workflow's requested permissions
 against the caller whatever the event, even though that token is not what performs the upload.
