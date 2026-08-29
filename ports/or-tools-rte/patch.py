@@ -36,6 +36,21 @@ if(USE_SIRIUS)
 endif()
 '''))
 
+# make vcpkg zlib compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'system_deps.cmake',
+    '''
+if(NOT BUILD_ZLIB AND NOT TARGET ZLIB::ZLIB)
+ find_package(ZLIB REQUIRED)
+endif()
+''',
+    '''
+if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
+  add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+  target_link_libraries(ZLIB::ZLIB INTERFACE ZLIB::ZLIBSTATIC)
+endif()
+'''))
+
 # add the USE_SIRIUS configuration flag in deps.cmake
 full_patch.append(Addition(
     Path.cwd()/'cmake'/'system_deps.cmake',
@@ -53,6 +68,55 @@ if (USE_SIRIUS)
   endif()
   find_package(sirius_solver CONFIG REQUIRED)
 endif(USE_SIRIUS)
+'''))
+
+# make installed vcpkg zlib config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'ortoolsConfig.cmake.in',
+    '''
+if(NOT TARGET ZLIB::ZLIB)
+  find_dependency(ZLIB REQUIRED)
+endif()
+''',
+    '''
+if(TARGET ZLIB::ZLIBSTATIC AND NOT TARGET ZLIB::ZLIB)
+  add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+  target_link_libraries(ZLIB::ZLIB INTERFACE ZLIB::ZLIBSTATIC)
+endif()
+'''))
+
+# make vcpkg scip config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'system_deps.cmake',
+    '''
+if(USE_SCIP)
+  if(NOT BUILD_SCIP AND NOT TARGET SCIP::libscip)
+    find_package(SCIP REQUIRED)
+  endif()
+endif()
+''',
+    '''
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+  add_library(SCIP::libscip INTERFACE IMPORTED)
+  target_link_libraries(SCIP::libscip INTERFACE libscip)
+endif()
+'''))
+
+# make installed vcpkg scip config compatible with OR-Tools' expected target name
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'ortoolsConfig.cmake.in',
+    '''
+if(@USE_SCIP@)
+  if(NOT TARGET SCIP::libscip)
+    find_dependency(SCIP REQUIRED)
+  endif()
+endif()
+''',
+    '''
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+  add_library(SCIP::libscip INTERFACE IMPORTED)
+  target_link_libraries(SCIP::libscip INTERFACE libscip)
+endif()
 '''))
 
 # add the USE_SIRIUS configuration flag in ortoolsConfig.cmake.in
@@ -74,6 +138,70 @@ if(@USE_SIRIUS@)
     find_dependency(sirius_solver REQUIRED ${CONFIG_FLAG})
   endif()
 endif()
+'''))
+
+# link SIRIUS into the main OR-Tools targets with current upstream CMake target names
+full_patch.append(Addition(
+    Path.cwd()/'cmake'/'cpp.cmake',
+    '  ${SCIP_DEPS}\n',
+    '  $<$<BOOL:${USE_SIRIUS}>:sirius_solver>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'CMakeLists.txt',
+    '  $<$<BOOL:${USE_SCIP}>:SCIP::libscip>\n',
+    '  $<$<BOOL:${USE_SIRIUS}>:sirius_solver>\n'))
+
+# provide compatibility aliases for absl nullability templates expected by OR-Tools
+for nullability_file in [
+    Path.cwd()/'ortools'/'math_opt'/'cpp'/'model.h',
+    Path.cwd()/'ortools'/'math_opt'/'storage'/'model_storage.h',
+    Path.cwd()/'ortools'/'math_opt'/'storage'/'model_storage_v2.h',
+]:
+    full_patch.append(Addition(
+        nullability_file,
+        '#include "absl/base/nullability.h"\n',
+        '''#ifndef ORTOOLS_ABSL_NULLABILITY_TYPE_ALIASES
+#define ORTOOLS_ABSL_NULLABILITY_TYPE_ALIASES
+namespace absl {
+template <typename T>
+using Nonnull = T;
+template <typename T>
+using Nullable = T;
+}  // namespace absl
+#endif
+
+'''))
+
+# adapt CBC interface to newer coin-or-cbc API from vcpkg
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include <cstdint>\n',
+    '#include <deque>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include <memory>\n',
+    '#include <sstream>\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '#include "CbcModel.hpp"\n',
+    '#include "CbcSolver.hpp"\n'))
+full_patch.append(Addition(
+    Path.cwd()/'ortools'/'linear_solver'/'cbc_interface.cc',
+    '// Heuristics\n\n',
+    '''namespace {
+int callCbc(const std::string& args, CbcModel& model) {
+  CbcParameters parameters;
+  CbcMain0(model, parameters);
+
+  std::deque<std::string> input_queue;
+  std::istringstream args_stream(args);
+  for (std::string token; args_stream >> token;) {
+    input_queue.push_back(token);
+  }
+
+  return CbcMain1(input_queue, model, parameters);
+}
+}  // namespace
+
 '''))
 
 # add SIRIUS execution in example files
