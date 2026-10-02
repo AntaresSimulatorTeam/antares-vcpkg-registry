@@ -87,7 +87,7 @@ jobs:
     runs-on: ${{ inputs.runner }}
     steps:
       - name: Checkout mirror tooling
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Named explicitly: a bare checkout here would take the caller's
           # repository. job_workflow_sha pins the same commit of this workflow
@@ -99,7 +99,7 @@ jobs:
           path: mirror
 
       - name: Checkout consumer
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
